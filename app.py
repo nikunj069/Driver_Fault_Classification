@@ -219,7 +219,24 @@ def load_model():
     model_path = "model/best_model.pkl"
     if not os.path.exists(model_path):
         model_path = "notebooks/best_model.pkl"
-    return joblib.load(model_path)
+    pipeline = joblib.load(model_path)
+    # ── Compatibility shim ────────────────────────────────────────────────
+    # The model was serialised with an older scikit-learn that stored
+    # `_fill_dtype` on SimpleImputer.  sklearn ≥1.5 removed that attribute.
+    # Patch it back so the loaded pipeline works on any sklearn version.
+    from sklearn.impute import SimpleImputer as _SI
+    import numpy as _np
+    if hasattr(pipeline, "named_steps"):
+        pre = pipeline.named_steps.get("preprocessor", None)
+        if pre is not None and hasattr(pre, "transformers_"):
+            for _, transformer, _ in pre.transformers_:
+                steps = getattr(transformer, "steps", [])
+                for _, step in steps:
+                    if isinstance(step, _SI) and not hasattr(step, "_fill_dtype"):
+                        step._fill_dtype = _np.float64
+    # ─────────────────────────────────────────────────────────────────────
+    return pipeline
+
 
 @st.cache_data
 def get_fault_distribution():
