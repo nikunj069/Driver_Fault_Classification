@@ -6,6 +6,5 @@ xgboost
 plotly
 joblib
 openpyxl
-python-dateutil
 scipy
 catboost
