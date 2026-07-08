@@ -7,4 +7,3 @@ plotly
 joblib
 openpyxl
 scipy
-catboost
