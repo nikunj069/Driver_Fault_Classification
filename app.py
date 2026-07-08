@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -832,6 +831,3 @@ elif page == "📊 Model Insights":
                 </div>
             </div>
         """, unsafe_allow_html=True)
-=======
-joblib.load("model/best_model.pkl")
->>>>>>> 6cdde4a788d6ddccc6f37d170ce7c094a76f49f1
