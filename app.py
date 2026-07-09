@@ -46,6 +46,160 @@ div.stButton > button:hover {
 div.stButton > button:active {
     transform: translateY(0);
 }
+
+/* ── Permanent Light Theme Overrides ── */
+
+/* Main app background */
+.stApp, .stApp > div, [data-testid="stAppViewContainer"] > div,
+[data-testid="stMain"], [data-testid="stMainBlockContainer"],
+[data-testid="block-container"] {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+}
+
+/* Toolbar / top bar */
+[data-testid="stToolbar"], [data-testid="stDecoration"],
+[data-testid="stStatusWidget"] {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+}
+
+/* All text elements */
+p, span, label, div, li, td, th, caption, figcaption,
+[class*="css"] { color: #1E293B !important; }
+
+/* Headings */
+h1, h2, h3, h4, h5, h6 { color: #1E293B !important; }
+
+/* Input fields, text areas, number inputs */
+input, textarea,
+[data-testid="stTextInput"] input,
+[data-testid="stNumberInput"] input,
+[data-testid="stTextArea"] textarea {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stTextInput"] input:focus,
+[data-testid="stNumberInput"] input:focus,
+[data-testid="stTextArea"] textarea:focus {
+    border-color: #2563EB !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+    outline: none !important;
+}
+input::placeholder, textarea::placeholder { color: #94A3B8 !important; }
+
+/* Selectbox / dropdown */
+[data-testid="stSelectbox"] > div > div,
+[data-testid="stSelectbox"] select,
+div[data-baseweb="select"] > div,
+div[data-baseweb="select"] div[role="combobox"] {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    border: 1px solid #CBD5E1 !important;
+    border-radius: 8px !important;
+}
+div[data-baseweb="select"] div[role="combobox"]:focus,
+div[data-baseweb="select"]:focus-within > div {
+    border-color: #2563EB !important;
+    box-shadow: 0 0 0 3px rgba(37,99,235,0.15) !important;
+}
+
+/* Dropdown menu (listbox) */
+ul[data-baseweb="menu"],
+div[data-baseweb="popover"],
+[data-testid="stSelectboxVirtualDropdown"] {
+    background-color: #FFFFFF !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.10) !important;
+}
+li[role="option"], li[data-highlighted] {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+}
+li[role="option"]:hover, li[aria-selected="true"] {
+    background-color: #EFF6FF !important;
+    color: #1E3A8A !important;
+}
+
+/* Number input steppers */
+[data-testid="stNumberInput"] button {
+    background-color: #F8FAFC !important;
+    color: #1E293B !important;
+    border: 1px solid #CBD5E1 !important;
+}
+[data-testid="stNumberInput"] button:hover {
+    background-color: #E2E8F0 !important;
+}
+
+/* Labels above inputs */
+[data-testid="stTextInput"] label,
+[data-testid="stNumberInput"] label,
+[data-testid="stSelectbox"] label,
+[data-testid="stTextArea"] label,
+[data-testid="stCheckbox"] label,
+.stSelectbox label, .stTextInput label, .stNumberInput label {
+    color: #374151 !important;
+    font-weight: 600 !important;
+    font-size: 14px !important;
+}
+
+/* Help tooltip icon */
+[data-testid="stTooltipIcon"] svg path { fill: #94A3B8 !important; }
+
+/* Expander */
+[data-testid="stExpander"],
+details[data-testid="stExpander"] {
+    background-color: #F8FAFC !important;
+    border: 1px solid #E2E8F0 !important;
+    border-radius: 10px !important;
+}
+[data-testid="stExpander"] summary,
+details[data-testid="stExpander"] summary {
+    color: #1E293B !important;
+    font-weight: 600 !important;
+}
+[data-testid="stExpander"] summary:hover {
+    background-color: #F1F5F9 !important;
+}
+
+/* Download button */
+[data-testid="stDownloadButton"] > button {
+    background-color: #F0FDF4 !important;
+    color: #166534 !important;
+    border: 1px solid #BBF7D0 !important;
+    border-radius: 10px !important;
+    font-weight: 600 !important;
+    transition: all 0.2s ease !important;
+}
+[data-testid="stDownloadButton"] > button:hover {
+    background-color: #DCFCE7 !important;
+    border-color: #86EFAC !important;
+    transform: translateY(-1px);
+}
+
+/* Spinner */
+[data-testid="stSpinner"] > div, .stSpinner { color: #2563EB !important; }
+
+/* Alert / info / error / warning boxes */
+[data-testid="stAlert"] {
+    background-color: #F8FAFC !important;
+    border-radius: 10px !important;
+}
+
+/* Column containers */
+[data-testid="column"] { background-color: transparent !important; }
+
+/* Divider */
+hr { border-color: #E2E8F0 !important; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: #F1F5F9; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
 </style>
 """, unsafe_allow_html=True)
 
