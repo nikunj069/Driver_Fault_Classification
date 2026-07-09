@@ -22,7 +22,7 @@ html, body, [data-testid="stAppViewContainer"] {
     background-color: #FFFFFF !important;
     color: #1E293B !important;
 }
-[data-testid="stHeader"] { background-color: #FFFFFF !important; }
+[data-testid="stHeader"] { display: none !important; }
 [data-testid="stSidebar"] { display: none !important; }
 h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
 .block-container { padding-top: 3rem !important; max-width: 960px !important; }
@@ -267,7 +267,7 @@ except Exception as e:
     model_error = str(e)
 
 # ==========================================
-# CATEGORY OPTIONS MAPPINGS (Clean & Professional)
+# CATEGORY OPTIONS MAPPINGS 
 # ==========================================
 MAP_BODY_TYPE = {
     "Passenger Car": "PASSENGER CAR",
