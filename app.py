@@ -31,16 +31,18 @@ h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
     border-bottom: 2px solid #F1F5F9; letter-spacing: 0.02em;
 }
 div.stButton > button {
-    background-color: #2563EB !important; color: #FFFFFF !important;
-    border-radius: 10px !important; border: none !important;
+    background-color: #FFFFFF !important; color: #2563EB !important;
+    border-radius: 10px !important; border: 2px solid #2563EB !important;
     padding: 16px 40px !important; font-weight: 700 !important;
     font-size: 16px !important; width: 100% !important;
-    box-shadow: 0 4px 6px rgba(37,99,235,0.15) !important;
+    box-shadow: 0 4px 6px rgba(37,99,235,0.08) !important;
     transition: all 0.2s ease !important;
 }
 div.stButton > button:hover {
-    background-color: #1D4ED8 !important;
-    box-shadow: 0 6px 12px rgba(37,99,235,0.25) !important;
+    background-color: #F0F9FF !important;
+    color: #1D4ED8 !important;
+    border-color: #1D4ED8 !important;
+    box-shadow: 0 6px 12px rgba(37,99,235,0.15) !important;
     transform: translateY(-1px);
 }
 div.stButton > button:active {
@@ -167,16 +169,19 @@ details[data-testid="stExpander"] summary {
 
 /* Download button */
 [data-testid="stDownloadButton"] > button {
-    background-color: #F0FDF4 !important;
+    background-color: #FFFFFF !important;
     color: #166534 !important;
-    border: 1px solid #BBF7D0 !important;
+    border: 2px solid #166534 !important;
     border-radius: 10px !important;
     font-weight: 600 !important;
+    box-shadow: 0 4px 6px rgba(22,101,52,0.08) !important;
     transition: all 0.2s ease !important;
 }
 [data-testid="stDownloadButton"] > button:hover {
-    background-color: #DCFCE7 !important;
-    border-color: #86EFAC !important;
+    background-color: #F0FDF4 !important;
+    border-color: #14532D !important;
+    color: #14532D !important;
+    box-shadow: 0 6px 12px rgba(22,101,52,0.15) !important;
     transform: translateY(-1px);
 }
 
@@ -579,8 +584,18 @@ CSV_HEADER_MAP = {
     "Confidence": "Prediction Confidence"
 }
 
+expected_cols = [
+    'Speed Limit', 'Vehicle Year', 'Latitude', 'Longitude', 'Is Weekend', 'Rush Hour', 'Night', 'Location_X', 'Location_Y',
+    'Local Case Number', 'Agency Name', 'ACRS Report Type', 'Route Type', 'Road Name', 'Cross-Street Type', 'Cross-Street Name',
+    'Collision Type', 'Weather', 'Surface Condition', 'Light', 'Traffic Control', 'Driver Substance Abuse', 'Injury Severity',
+    'Drivers License State', 'Vehicle Damage Extent', 'Vehicle First Impact Location', 'Vehicle Second Impact Location',
+    'Vehicle Body Type', 'Vehicle Movement', 'Vehicle Continuing Dir', 'Vehicle Going Dir', 'Driverless Vehicle', 'Parked Vehicle',
+    'Vehicle Make', 'Vehicle Model', 'Equipment Problems',
+    'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
+]
+
 def mapped_selectbox(label, mapping, default_key):
-    options = list(mapping.keys())
+    options = sorted(list(mapping.keys()))
     idx = options.index(default_key) if default_key in options else 0
     selected_key = st.selectbox(label, options, index=idx)
     return mapping[selected_key]
@@ -603,248 +618,370 @@ if not model_loaded:
     st.error(f"❌ Model failed to load: {model_error}")
     st.stop()
 
-# ── SECTION 1 — Vehicle Information ──
-st.markdown('<div class="section-label">🚘 Vehicle Information</div>', unsafe_allow_html=True)
-v1, v2 = st.columns(2)
-with v1:
-    vehicle_number = st.text_input("Vehicle Number", value="Vehicle 1", help="Identifier of the vehicle (e.g. Vehicle 1, Vehicle 2)")
-    license_plate = st.text_input("License Plate Number", placeholder="e.g. ABC-1234")
-    vehicle_body_type = mapped_selectbox("Vehicle Body Type", MAP_BODY_TYPE, "Passenger Car")
-    vehicle_year = st.number_input("Vehicle Year", 1950, 2030, 2018)
-    speed_limit = st.number_input("Road Speed Limit (mph)", 0, 70, 35, step=5, help="Speed limit of the roadway/segment where the accident occurred (not the speed of the individual vehicle).")
-with v2:
-    vehicle_make = mapped_selectbox("Vehicle Make", MAP_MAKE, "Toyota")
-    vehicle_color = st.text_input("Vehicle Color", placeholder="e.g. Black, White, Red")
-    insurance_provider = st.text_input("Insurance Provider", placeholder="e.g. Geico, State Farm")
-    vehicle_movement = mapped_selectbox("Vehicle Movement", MAP_MOVEMENT, "Moving at Constant Speed")
-    vehicle_details = st.text_input("Vehicle Details (Notes)", placeholder="General vehicle characteristics or pre-accident condition")
+def run_single_prediction():
+    # ── SECTION 1 — Vehicle Information ──
+    st.markdown('<div class="section-label">🚘 Vehicle Information</div>', unsafe_allow_html=True)
+    v1, v2 = st.columns(2)
+    with v1:
+        vehicle_number = st.text_input("Vehicle Number", value="Vehicle 1", help="Identifier of the vehicle (e.g. Vehicle 1, Vehicle 2)")
+        license_plate = st.text_input("License Plate Number", placeholder="e.g. ABC-1234")
+        vehicle_body_type = mapped_selectbox("Vehicle Body Type", MAP_BODY_TYPE, "Passenger Car")
+        vehicle_year = st.number_input("Vehicle Year", 1950, 2030, 2018)
+        speed_limit = st.number_input("Road Speed Limit (mph)", 0, 70, 35, step=5, help="Speed limit of the roadway/segment where the accident occurred (not the speed of the individual vehicle).")
+    with v2:
+        vehicle_make = mapped_selectbox("Vehicle Make", MAP_MAKE, "Toyota")
+        vehicle_color = st.text_input("Vehicle Color", placeholder="e.g. Black, White, Red")
+        insurance_provider = st.text_input("Insurance Provider", placeholder="e.g. Geico, State Farm")
+        vehicle_movement = mapped_selectbox("Vehicle Movement", MAP_MOVEMENT, "Moving at Constant Speed")
+        vehicle_details = st.text_input("Vehicle Details (Notes)", placeholder="General vehicle characteristics or pre-accident condition")
 
-# ── SECTION 2 — Crash Conditions ──
-st.markdown('<div class="section-label">⚠️ Crash Conditions</div>', unsafe_allow_html=True)
-c1, c2 = st.columns(2)
-with c1:
-    collision_type = mapped_selectbox("Collision Type", MAP_COLLISION, "Same Direction Rear End")
-    surface_condition = mapped_selectbox("Surface Condition", MAP_SURFACE, "Dry")
-    traffic_control = mapped_selectbox("Traffic Control", MAP_TRAFFIC_CONTROL, "Traffic Signal")
-with c2:
-    weather = mapped_selectbox("Weather", MAP_WEATHER, "Clear")
-    light = mapped_selectbox("Light", MAP_LIGHT, "Daylight")
+    # ── SECTION 2 — Crash Conditions ──
+    st.markdown('<div class="section-label">⚠️ Crash Conditions</div>', unsafe_allow_html=True)
+    c1, c2 = st.columns(2)
+    with c1:
+        collision_type = mapped_selectbox("Collision Type", MAP_COLLISION, "Same Direction Rear End")
+        surface_condition = mapped_selectbox("Surface Condition", MAP_SURFACE, "Dry")
+        traffic_control = mapped_selectbox("Traffic Control", MAP_TRAFFIC_CONTROL, "Traffic Signal")
+    with c2:
+        weather = mapped_selectbox("Weather", MAP_WEATHER, "Clear")
+        light = mapped_selectbox("Light", MAP_LIGHT, "Daylight")
 
-# ── SECTION 3 — Driver Information ──
-st.markdown('<div class="section-label">👤 Driver Information</div>', unsafe_allow_html=True)
-d1, d2 = st.columns(2)
-with d1:
-    driver_substance_abuse = mapped_selectbox("Driver Substance Abuse", MAP_SUBSTANCE_ABUSE, "None Detected")
-    driverless_vehicle = st.selectbox("Driverless Vehicle", ["No", "Unknown"], index=0)
-with d2:
-    injury_severity = mapped_selectbox("Injury Severity", MAP_INJURY_SEVERITY, "No Apparent Injury")
-    parked_vehicle = st.selectbox("Parked Vehicle", ["No", "Yes"], index=0)
+    # ── SECTION 3 — Driver Information ──
+    st.markdown('<div class="section-label">👤 Driver Information</div>', unsafe_allow_html=True)
+    d1, d2 = st.columns(2)
+    with d1:
+        driver_substance_abuse = mapped_selectbox("Driver Substance Abuse", MAP_SUBSTANCE_ABUSE, "None Detected")
+        driverless_vehicle = st.selectbox("Driverless Vehicle", ["No", "Unknown"], index=0)
+    with d2:
+        injury_severity = mapped_selectbox("Injury Severity", MAP_INJURY_SEVERITY, "No Apparent Injury")
+        parked_vehicle = st.selectbox("Parked Vehicle", ["No", "Yes"], index=0)
 
-# ── SECTION 4 — Location ──
-st.markdown('<div class="section-label">📍 Location</div>', unsafe_allow_html=True)
-l1, l2 = st.columns(2)
-with l1:
-    agency_name = mapped_selectbox("Agency Name", MAP_AGENCY, "Montgomery County Police")
-    latitude = st.number_input("Latitude", 37.0, 41.0, 39.07, step=0.001, format="%.5f")
-with l2:
-    route_type = mapped_selectbox("Route Type", MAP_ROUTE_TYPE, "Maryland (State)")
-    longitude = st.number_input("Longitude", -80.0, -75.0, -77.10, step=0.001, format="%.5f")
+    # ── SECTION 4 — Location ──
+    st.markdown('<div class="section-label">📍 Location</div>', unsafe_allow_html=True)
+    l1, l2 = st.columns(2)
+    with l1:
+        agency_name = mapped_selectbox("Agency Name", MAP_AGENCY, "Montgomery County Police")
+        latitude = st.number_input("Latitude", 37.0, 41.0, 39.07, step=0.001, format="%.5f")
+    with l2:
+        route_type = mapped_selectbox("Route Type", MAP_ROUTE_TYPE, "Maryland (State)")
+        longitude = st.number_input("Longitude", -80.0, -75.0, -77.10, step=0.001, format="%.5f")
 
-# ── SECTION 5 — Crash Date & Time ──
-st.markdown('<div class="section-label">📅 Crash Date & Time</div>', unsafe_allow_html=True)
-t1, t2, t3, t4 = st.columns(4)
-with t1:
-    crash_year = st.number_input("Year", 2000, 2030, 2024)
-with t2:
-    crash_month = st.number_input("Month", 1, 12, 1)
-with t3:
-    crash_day = st.number_input("Day", 1, 31, 1)
-with t4:
-    crash_hour = st.number_input("Hour (0–23)", 0, 23, 12)
+    # ── SECTION 5 — Crash Date & Time ──
+    st.markdown('<div class="section-label">📅 Crash Date & Time</div>', unsafe_allow_html=True)
+    t1, t2, t3, t4 = st.columns(4)
+    with t1:
+        crash_year = st.number_input("Year", 2000, 2030, 2024)
+    with t2:
+        crash_month = st.number_input("Month", 1, 12, 1)
+    with t3:
+        crash_day = st.number_input("Day", 1, 31, 1)
+    with t4:
+        crash_hour = st.number_input("Hour (0–23)", 0, 23, 12)
 
-# ── SECTION 6 — Advanced Vehicle Details (collapsed expander) ──
-with st.expander("⚙️ Advanced Vehicle Details", expanded=False):
-    a1, a2 = st.columns(2)
-    with a1:
-        vehicle_first_impact = mapped_selectbox("Vehicle First Impact Location", MAP_IMPACT_LOCATION, "12 O'Clock (Front)")
-        vehicle_going_dir = mapped_selectbox("Vehicle Going Dir", MAP_DIRECTION, "North")
-    with a2:
-        vehicle_second_impact = mapped_selectbox("Vehicle Second Impact Location", MAP_IMPACT_LOCATION, "No Collision")
-        vehicle_continuing_dir = mapped_selectbox("Vehicle Continuing Dir", MAP_DIRECTION, "North")
+    # ── SECTION 6 — Advanced Vehicle Details (collapsed expander) ──
+    with st.expander("⚙️ Advanced Vehicle Details", expanded=False):
+        a1, a2 = st.columns(2)
+        with a1:
+            vehicle_first_impact = mapped_selectbox("Vehicle First Impact Location", MAP_IMPACT_LOCATION, "12 O'Clock (Front)")
+            vehicle_going_dir = mapped_selectbox("Vehicle Going Dir", MAP_DIRECTION, "North")
+        with a2:
+            vehicle_second_impact = mapped_selectbox("Vehicle Second Impact Location", MAP_IMPACT_LOCATION, "No Collision")
+            vehicle_continuing_dir = mapped_selectbox("Vehicle Continuing Dir", MAP_DIRECTION, "North")
+
+    # ==========================================
+    # PREDICT
+    # ==========================================
+    st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
+
+    if st.button("🤖 Predict Driver Responsibility", type="primary"):
+        with st.spinner("Analyzing accident..."):
+            # Calculate Date Features
+            try:
+                dow = datetime.date(int(crash_year), int(crash_month), int(crash_day)).weekday()
+            except ValueError:
+                dow = 0
+            is_weekend = 1 if dow >= 5 else 0
+            rush_hour = 1 if (7 <= crash_hour <= 9) or (16 <= crash_hour <= 19) else 0
+            night = 1 if (crash_hour >= 20 or crash_hour <= 5) else 0
+
+            # Construct single-row DataFrame using exact same column types & names as training
+            input_df = pd.DataFrame([{
+                # Numerical features
+                "Speed Limit": int(speed_limit),
+                "Vehicle Year": int(vehicle_year),
+                "Latitude": float(latitude),
+                "Longitude": float(longitude),
+                "Is Weekend": int(is_weekend),
+                "Rush Hour": int(rush_hour),
+                "Night": int(night),
+                "Location_X": float(latitude),
+                "Location_Y": float(longitude),
+                # Categorical features (with np.nan for hidden/auto-generated attributes)
+                "Local Case Number": np.nan,
+                "Agency Name": agency_name,
+                "ACRS Report Type": np.nan,
+                "Route Type": route_type,
+                "Road Name": np.nan,
+                "Cross-Street Type": np.nan,
+                "Cross-Street Name": np.nan,
+                "Collision Type": collision_type,
+                "Weather": weather,
+                "Surface Condition": surface_condition,
+                "Light": light,
+                "Traffic Control": traffic_control,
+                "Driver Substance Abuse": driver_substance_abuse,
+                "Injury Severity": injury_severity,
+                "Drivers License State": np.nan,
+                "Vehicle Damage Extent": np.nan,
+                "Vehicle First Impact Location": vehicle_first_impact,
+                "Vehicle Second Impact Location": vehicle_second_impact,
+                "Vehicle Body Type": vehicle_body_type,
+                "Vehicle Movement": vehicle_movement,
+                "Vehicle Continuing Dir": vehicle_continuing_dir,
+                "Vehicle Going Dir": vehicle_going_dir,
+                "Driverless Vehicle": driverless_vehicle,
+                "Parked Vehicle": parked_vehicle,
+                "Vehicle Make": vehicle_make,
+                "Vehicle Model": np.nan,
+                "Equipment Problems": np.nan,
+                # Remainder features
+                "Crash Year": int(crash_year),
+                "Crash Month": int(crash_month),
+                "Crash Day": int(crash_day),
+                "Crash Hour": int(crash_hour),
+                "Crash DayOfWeek": int(dow),
+            }])
+
+            # Ensure exact column order
+            input_df = input_df[expected_cols]
+
+            try:
+                preds = model.predict(input_df)
+                prediction = int(preds[0])
+
+                confidence = None
+                if hasattr(model, "predict_proba"):
+                    try:
+                        proba = model.predict_proba(input_df)
+                        confidence = float(proba[0][prediction]) * 100
+                    except Exception:
+                        pass
+
+                if prediction == 1:
+                    st.markdown(f"""
+                    <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
+                                padding: 28px; margin-top: 24px; text-align: center;
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                        <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
+                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
+                            Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
+                                padding: 28px; margin-top: 24px; text-align: center;
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                        <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
+                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
+                            Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+
+                # Generate Prediction CSV File for Download
+                download_df = input_df.copy()
+                download_df["Confidence"] = f"{confidence:.2f}%" if confidence is not None else "N/A"
+                
+                # Map clean, user-friendly labels and strings back
+                download_df["Vehicle Body Type"] = download_df["Vehicle Body Type"].map(REV_BODY_TYPE).fillna(download_df["Vehicle Body Type"])
+                download_df["Vehicle Make"] = download_df["Vehicle Make"].map(REV_MAKE).fillna(download_df["Vehicle Make"])
+                download_df["Vehicle Movement"] = download_df["Vehicle Movement"].map(REV_MOVEMENT).fillna(download_df["Vehicle Movement"])
+                download_df["Collision Type"] = download_df["Collision Type"].map(REV_COLLISION).fillna(download_df["Collision Type"])
+                download_df["Weather"] = download_df["Weather"].map(REV_WEATHER).fillna(download_df["Weather"])
+                download_df["Surface Condition"] = download_df["Surface Condition"].map(REV_SURFACE).fillna(download_df["Surface Condition"])
+                download_df["Light"] = download_df["Light"].map(REV_LIGHT).fillna(download_df["Light"])
+                download_df["Traffic Control"] = download_df["Traffic Control"].map(REV_TRAFFIC_CONTROL).fillna(download_df["Traffic Control"])
+                download_df["Driver Substance Abuse"] = download_df["Driver Substance Abuse"].map(REV_SUBSTANCE_ABUSE).fillna(download_df["Driver Substance Abuse"])
+                download_df["Injury Severity"] = download_df["Injury Severity"].map(REV_INJURY_SEVERITY).fillna(download_df["Injury Severity"])
+                download_df["Vehicle First Impact Location"] = download_df["Vehicle First Impact Location"].map(REV_IMPACT_LOCATION).fillna(download_df["Vehicle First Impact Location"])
+                download_df["Vehicle Second Impact Location"] = download_df["Vehicle Second Impact Location"].map(REV_IMPACT_LOCATION).fillna(download_df["Vehicle Second Impact Location"])
+                download_df["Vehicle Going Dir"] = download_df["Vehicle Going Dir"].map(REV_DIRECTION).fillna(download_df["Vehicle Going Dir"])
+                download_df["Vehicle Continuing Dir"] = download_df["Vehicle Continuing Dir"].map(REV_DIRECTION).fillna(download_df["Vehicle Continuing Dir"])
+                download_df["Route Type"] = download_df["Route Type"].map(REV_ROUTE_TYPE).fillna(download_df["Route Type"])
+                download_df["Agency Name"] = download_df["Agency Name"].map(REV_AGENCY).fillna(download_df["Agency Name"])
+
+                # Additional UI fields
+                download_df["Vehicle Number"] = vehicle_number
+                download_df["License Plate"] = license_plate
+                download_df["Vehicle Color"] = vehicle_color
+                download_df["Insurance Provider"] = insurance_provider
+                download_df["Vehicle Details"] = vehicle_details
+                
+                # Reorder columns: vehicle info first, remove 'Fault' prediction col!
+                new_vehicle_cols = ["Vehicle Number", "License Plate", "Vehicle Color", "Insurance Provider", "Vehicle Details"]
+                vehicle_cols = [
+                    'Vehicle Make', 'Vehicle Model', 'Vehicle Year', 'Vehicle Body Type', 
+                    'Vehicle Movement', 'Speed Limit', 'Vehicle First Impact Location', 
+                    'Vehicle Second Impact Location', 'Vehicle Going Dir', 'Vehicle Continuing Dir', 
+                    'Vehicle Damage Extent', 'Driverless Vehicle', 'Parked Vehicle', 'Equipment Problems'
+                ]
+                
+                all_vehicle_cols = new_vehicle_cols + vehicle_cols
+                other_cols = [col for col in expected_cols if col not in vehicle_cols]
+                output_cols = ['Confidence']
+                csv_col_order = all_vehicle_cols + other_cols + output_cols
+                
+                download_df = download_df[csv_col_order]
+                
+                # Rename columns to human-friendly headers in CSV output
+                download_df = download_df.rename(columns=CSV_HEADER_MAP)
+                
+                csv_data = download_df.to_csv(index=False).encode('utf-8')
+                
+                st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
+                st.download_button(
+                    label="📥 Download Prediction Result as CSV",
+                    data=csv_data,
+                    file_name="driver_fault_prediction.csv",
+                    mime="text/csv"
+                )
+
+            except Exception as e:
+                st.error(f"❌ Prediction failed: {e}")
 
 # ==========================================
-# PREDICT
+# TABBED LAYOUT (Single & Batch Prediction)
 # ==========================================
-st.markdown("<div style='margin-top:24px'></div>", unsafe_allow_html=True)
+tab1, tab2 = st.tabs(["📝 Single Prediction Form", "📁 Batch Prediction (CSV)"])
 
-if st.button("🤖 Predict Driver Responsibility", type="primary"):
-    with st.spinner("Analyzing accident..."):
-        # Calculate Date Features
-        try:
-            dow = datetime.date(int(crash_year), int(crash_month), int(crash_day)).weekday()
-        except ValueError:
-            dow = 0
-        is_weekend = 1 if dow >= 5 else 0
-        rush_hour = 1 if (7 <= crash_hour <= 9) or (16 <= crash_hour <= 19) else 0
-        night = 1 if (crash_hour >= 20 or crash_hour <= 5) else 0
+with tab1:
+    run_single_prediction()
 
-        # Construct single-row DataFrame using exact same column types & names as training
-        input_df = pd.DataFrame([{
-            # Numerical features
-            "Speed Limit": int(speed_limit),
-            "Vehicle Year": int(vehicle_year),
-            "Latitude": float(latitude),
-            "Longitude": float(longitude),
-            "Is Weekend": int(is_weekend),
-            "Rush Hour": int(rush_hour),
-            "Night": int(night),
-            "Location_X": float(latitude),
-            "Location_Y": float(longitude),
-            # Categorical features (with np.nan for hidden/auto-generated attributes)
-            "Local Case Number": np.nan,
-            "Agency Name": agency_name,
-            "ACRS Report Type": np.nan,
-            "Route Type": route_type,
-            "Road Name": np.nan,
-            "Cross-Street Type": np.nan,
-            "Cross-Street Name": np.nan,
-            "Collision Type": collision_type,
-            "Weather": weather,
-            "Surface Condition": surface_condition,
-            "Light": light,
-            "Traffic Control": traffic_control,
-            "Driver Substance Abuse": driver_substance_abuse,
-            "Injury Severity": injury_severity,
-            "Drivers License State": np.nan,
-            "Vehicle Damage Extent": np.nan,
-            "Vehicle First Impact Location": vehicle_first_impact,
-            "Vehicle Second Impact Location": vehicle_second_impact,
-            "Vehicle Body Type": vehicle_body_type,
-            "Vehicle Movement": vehicle_movement,
-            "Vehicle Continuing Dir": vehicle_continuing_dir,
-            "Vehicle Going Dir": vehicle_going_dir,
-            "Driverless Vehicle": driverless_vehicle,
-            "Parked Vehicle": parked_vehicle,
-            "Vehicle Make": vehicle_make,
-            "Vehicle Model": np.nan,
-            "Equipment Problems": np.nan,
-            # Remainder features
-            "Crash Year": int(crash_year),
-            "Crash Month": int(crash_month),
-            "Crash Day": int(crash_day),
-            "Crash Hour": int(crash_hour),
-            "Crash DayOfWeek": int(dow),
-        }])
-
-        expected_cols = [
-            'Speed Limit', 'Vehicle Year', 'Latitude', 'Longitude', 'Is Weekend', 'Rush Hour', 'Night', 'Location_X', 'Location_Y',
-            'Local Case Number', 'Agency Name', 'ACRS Report Type', 'Route Type', 'Road Name', 'Cross-Street Type', 'Cross-Street Name',
-            'Collision Type', 'Weather', 'Surface Condition', 'Light', 'Traffic Control', 'Driver Substance Abuse', 'Injury Severity',
-            'Drivers License State', 'Vehicle Damage Extent', 'Vehicle First Impact Location', 'Vehicle Second Impact Location',
-            'Vehicle Body Type', 'Vehicle Movement', 'Vehicle Continuing Dir', 'Vehicle Going Dir', 'Driverless Vehicle', 'Parked Vehicle',
-            'Vehicle Make', 'Vehicle Model', 'Equipment Problems',
-            'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
-        ]
+with tab2:
+    st.markdown("""
+    <div style="margin: 20px 0;">
+        <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #1E3A8A;">📁 Batch Prediction from CSV</h3>
+        <p style="margin: 0; font-size: 14px; color: #64748B; line-height: 1.5;">
+            Upload a CSV file containing multiple accident records to run predictions in bulk. 
+            Download the sample template below, fill in the details according to the labelled columns, and upload it here.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 1. Download Sample CSV Button
+    sample_csv_path = "sample_mixed.csv"
+    if os.path.exists(sample_csv_path):
+        with open(sample_csv_path, "r", encoding="utf-8") as f:
+            sample_csv_data = f.read()
+    else:
+        sample_csv_data = ""
         
-        # Ensure exact column order
-        input_df = input_df[expected_cols]
-
+    st.download_button(
+        label="📥 Download Sample CSV Template",
+        data=sample_csv_data,
+        file_name="sample_accident_template.csv",
+        mime="text/csv",
+        key="download_sample_template_btn"
+    )
+    
+    st.markdown("<hr style='margin: 24px 0;'/>", unsafe_allow_html=True)
+    
+    # 2. File Uploader
+    uploaded_file = st.file_uploader("Upload your filled CSV file", type=["csv"], key="batch_uploader")
+    if uploaded_file is not None:
         try:
-            preds = model.predict(input_df)
-            prediction = int(preds[0])
-
-            confidence = None
-            if hasattr(model, "predict_proba"):
-                try:
-                    proba = model.predict_proba(input_df)
-                    confidence = float(proba[0][prediction]) * 100
-                except Exception:
-                    pass
-
-            if prediction == 1:
-                st.markdown(f"""
-                <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
-                            padding: 28px; margin-top: 24px; text-align: center;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                    <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
-                    <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
-                    {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                    <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
-                        Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-            else:
-                st.markdown(f"""
-                <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
-                            padding: 28px; margin-top: 24px; text-align: center;
-                            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                    <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
-                    <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
-                    {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                    <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
-                        Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
-                    </p>
-                </div>
-                """, unsafe_allow_html=True)
-
-            # Generate Prediction CSV File for Download
-            download_df = input_df.copy()
-            download_df["Confidence"] = f"{confidence:.2f}%" if confidence is not None else "N/A"
+            uploaded_df = pd.read_csv(uploaded_file)
+            st.success(f"✅ Successfully loaded {len(uploaded_df)} records!")
             
-            # Map clean, user-friendly labels and strings back
-            download_df["Vehicle Body Type"] = download_df["Vehicle Body Type"].map(REV_BODY_TYPE).fillna(download_df["Vehicle Body Type"])
-            download_df["Vehicle Make"] = download_df["Vehicle Make"].map(REV_MAKE).fillna(download_df["Vehicle Make"])
-            download_df["Vehicle Movement"] = download_df["Vehicle Movement"].map(REV_MOVEMENT).fillna(download_df["Vehicle Movement"])
-            download_df["Collision Type"] = download_df["Collision Type"].map(REV_COLLISION).fillna(download_df["Collision Type"])
-            download_df["Weather"] = download_df["Weather"].map(REV_WEATHER).fillna(download_df["Weather"])
-            download_df["Surface Condition"] = download_df["Surface Condition"].map(REV_SURFACE).fillna(download_df["Surface Condition"])
-            download_df["Light"] = download_df["Light"].map(REV_LIGHT).fillna(download_df["Light"])
-            download_df["Traffic Control"] = download_df["Traffic Control"].map(REV_TRAFFIC_CONTROL).fillna(download_df["Traffic Control"])
-            download_df["Driver Substance Abuse"] = download_df["Driver Substance Abuse"].map(REV_SUBSTANCE_ABUSE).fillna(download_df["Driver Substance Abuse"])
-            download_df["Injury Severity"] = download_df["Injury Severity"].map(REV_INJURY_SEVERITY).fillna(download_df["Injury Severity"])
-            download_df["Vehicle First Impact Location"] = download_df["Vehicle First Impact Location"].map(REV_IMPACT_LOCATION).fillna(download_df["Vehicle First Impact Location"])
-            download_df["Vehicle Second Impact Location"] = download_df["Vehicle Second Impact Location"].map(REV_IMPACT_LOCATION).fillna(download_df["Vehicle Second Impact Location"])
-            download_df["Vehicle Going Dir"] = download_df["Vehicle Going Dir"].map(REV_DIRECTION).fillna(download_df["Vehicle Going Dir"])
-            download_df["Vehicle Continuing Dir"] = download_df["Vehicle Continuing Dir"].map(REV_DIRECTION).fillna(download_df["Vehicle Continuing Dir"])
-            download_df["Route Type"] = download_df["Route Type"].map(REV_ROUTE_TYPE).fillna(download_df["Route Type"])
-            download_df["Agency Name"] = download_df["Agency Name"].map(REV_AGENCY).fillna(download_df["Agency Name"])
-
-            # Additional UI fields
-            download_df["Vehicle Number"] = vehicle_number
-            download_df["License Plate"] = license_plate
-            download_df["Vehicle Color"] = vehicle_color
-            download_df["Insurance Provider"] = insurance_provider
-            download_df["Vehicle Details"] = vehicle_details
+            # Show original preview
+            st.markdown("##### 🔍 Preview of Uploaded Data:")
+            st.dataframe(uploaded_df.head(5), use_container_width=True)
             
-            # Reorder columns: vehicle info first, remove 'Fault' prediction col!
-            new_vehicle_cols = ["Vehicle Number", "License Plate", "Vehicle Color", "Insurance Provider", "Vehicle Details"]
-            vehicle_cols = [
-                'Vehicle Make', 'Vehicle Model', 'Vehicle Year', 'Vehicle Body Type', 
-                'Vehicle Movement', 'Speed Limit', 'Vehicle First Impact Location', 
-                'Vehicle Second Impact Location', 'Vehicle Going Dir', 'Vehicle Continuing Dir', 
-                'Vehicle Damage Extent', 'Driverless Vehicle', 'Parked Vehicle', 'Equipment Problems'
-            ]
-            
-            all_vehicle_cols = new_vehicle_cols + vehicle_cols
-            other_cols = [col for col in expected_cols if col not in vehicle_cols]
-            output_cols = ['Confidence']
-            csv_col_order = all_vehicle_cols + other_cols + output_cols
-            
-            download_df = download_df[csv_col_order]
-            
-            # Rename columns to human-friendly headers in CSV output
-            download_df = download_df.rename(columns=CSV_HEADER_MAP)
-            
-            csv_data = download_df.to_csv(index=False).encode('utf-8')
-            
-            st.markdown("<div style='margin-top:20px'></div>", unsafe_allow_html=True)
-            st.download_button(
-                label="📥 Download Prediction Result as CSV",
-                data=csv_data,
-                file_name="driver_fault_prediction.csv",
-                mime="text/csv"
-            )
-
+            if st.button("🤖 Predict Batch Responsibility", type="primary", key="batch_predict_btn"):
+                with st.spinner("Analyzing batch records..."):
+                    # Process uploaded CSV
+                    processed_df = uploaded_df.copy()
+                    
+                    # Human-friendly mapping cleaner function
+                    mappings = {
+                        "Vehicle Body Type": MAP_BODY_TYPE,
+                        "Vehicle Make": MAP_MAKE,
+                        "Vehicle Movement": MAP_MOVEMENT,
+                        "Collision Type": MAP_COLLISION,
+                        "Weather": MAP_WEATHER,
+                        "Surface Condition": MAP_SURFACE,
+                        "Light": MAP_LIGHT,
+                        "Traffic Control": MAP_TRAFFIC_CONTROL,
+                        "Driver Substance Abuse": MAP_SUBSTANCE_ABUSE,
+                        "Injury Severity": MAP_INJURY_SEVERITY,
+                        "Vehicle First Impact Location": MAP_IMPACT_LOCATION,
+                        "Vehicle Second Impact Location": MAP_IMPACT_LOCATION,
+                        "Vehicle Going Dir": MAP_DIRECTION,
+                        "Vehicle Continuing Dir": MAP_DIRECTION,
+                        "Route Type": MAP_ROUTE_TYPE,
+                        "Agency Name": MAP_AGENCY
+                    }
+                    
+                    for col, mapping in mappings.items():
+                        if col in processed_df.columns:
+                            processed_df[col] = processed_df[col].apply(lambda x: mapping[x] if x in mapping else x)
+                            
+                    # Run feature engineering
+                    processed_df = feature_engineering(processed_df)
+                    
+                    # Ensure all expected columns exist
+                    for col in expected_cols:
+                        if col not in processed_df.columns:
+                            processed_df[col] = np.nan
+                            
+                    # Force numeric types
+                    numeric_cols = [
+                        'Speed Limit', 'Vehicle Year', 'Latitude', 'Longitude', 
+                        'Is Weekend', 'Rush Hour', 'Night', 'Location_X', 'Location_Y', 
+                        'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
+                    ]
+                    for col in numeric_cols:
+                        processed_df[col] = pd.to_numeric(processed_df[col], errors='coerce')
+                        
+                    # Reorder columns to match model expectations
+                    processed_df = processed_df[expected_cols]
+                    
+                    # Run prediction
+                    preds = model.predict(processed_df)
+                    
+                    # Handle confidence if possible
+                    confidences = []
+                    if hasattr(model, "predict_proba"):
+                        try:
+                            proba = model.predict_proba(processed_df)
+                            for i, pred in enumerate(preds):
+                                confidences.append(f"{proba[i][int(pred)] * 100:.1f}%")
+                        except Exception:
+                            pass
+                    
+                    # Add results to output dataframe
+                    output_df = uploaded_df.copy()
+                    output_df["Predicted Fault"] = ["Driver At Fault" if int(p) == 1 else "Driver Not At Fault" for p in preds]
+                    if confidences:
+                        output_df["Confidence"] = confidences
+                        
+                    st.markdown("##### 🎯 Prediction Results Preview:")
+                    st.dataframe(output_df.head(10), use_container_width=True)
+                    
+                    # Download Results Button
+                    results_csv = output_df.to_csv(index=False).encode('utf-8')
+                    st.download_button(
+                        label="📥 Download Predicted Results CSV",
+                        data=results_csv,
+                        file_name="batch_predictions_result.csv",
+                        mime="text/csv",
+                        key="batch_download_results_btn"
+                    )
         except Exception as e:
-            st.error(f"❌ Prediction failed: {e}")
+            st.error(f"❌ Error processing CSV file: {e}")
