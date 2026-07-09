@@ -33,17 +33,19 @@ h1,h2,h3,h4 { font-family: 'Inter', sans-serif; }
 }
 div.stButton > button {
     background-color: #FFFFFF !important; color: #2563EB !important;
-    border-radius: 10px !important; border: 2px solid #2563EB !important;
+    border-radius: 10px !important; border: 1px solid #CBD5E1 !important;
     padding: 16px 40px !important; font-weight: 700 !important;
-    font-size: 16px !important; width: 100% !important;
-    box-shadow: 0 4px 6px rgba(37,99,235,0.08) !important;
+    font-size: 16px !important; width: auto !important;
+    display: block !important; margin: 0 auto !important;
+    min-width: 260px !important; max-width: 480px !important;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05) !important;
     transition: all 0.2s ease !important;
 }
 div.stButton > button:hover {
-    background-color: #F0F9FF !important;
+    background-color: #F8FAFC !important;
     color: #1D4ED8 !important;
-    border-color: #1D4ED8 !important;
-    box-shadow: 0 6px 12px rgba(37,99,235,0.15) !important;
+    border-color: #94A3B8 !important;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.08) !important;
     transform: translateY(-1px);
 }
 div.stButton > button:active {
@@ -768,63 +770,32 @@ def run_single_prediction():
                     except Exception:
                         pass
 
-                # Create columns for results layout
-                res_col1, res_col2 = st.columns([1, 1])
-                with res_col1:
-                    if prediction == 1:
-                        st.markdown(f"""
-                        <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
-                                    padding: 28px; text-align: center;
-                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                            <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
-                            <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
-                            {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                            <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
-                                Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
-                            </p>
-                        </div>
-                        """, unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""
-                        <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
-                                    padding: 28px; text-align: center;
-                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                            <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
-                            <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
-                            {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                            <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
-                                Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
-                            </p>
-                        </div>
-                        """, unsafe_allow_html=True)
-
-                with res_col2:
-                    if hasattr(model, "predict_proba"):
-                        try:
-                            proba = model.predict_proba(input_df)[0]
-                            pull_values = [0, 0.1]  # Highlight / Explode "Driver At Fault" slice initially
-                            
-                            fig = go.Figure(data=[go.Pie(
-                                labels=["Driver Not At Fault", "Driver At Fault"],
-                                values=[float(proba[0]) * 100, float(proba[1]) * 100],
-                                pull=pull_values,
-                                hole=0.4,
-                                textinfo='percent',
-                                marker=dict(colors=["#10B981", "#EF4444"], line=dict(color='#FFFFFF', width=2))
-                            )])
-                            fig.update_layout(
-                                title_text="🎯 Prediction Probability Split",
-                                title_font=dict(size=16, family="Inter", color="#1E3A8A"),
-                                paper_bgcolor='rgba(0,0,0,0)',
-                                plot_bgcolor='rgba(0,0,0,0)',
-                                showlegend=True,
-                                legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
-                                margin=dict(t=40, b=40, l=0, r=0),
-                                height=280
-                            )
-                            st.plotly_chart(fig, use_container_width=True)
-                        except Exception as ex:
-                            st.warning(f"Could not render probability chart: {ex}")
+                if prediction == 1:
+                    st.markdown(f"""
+                    <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
+                                padding: 28px; margin-top: 24px; text-align: center;
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                        <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
+                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
+                            Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
+                else:
+                    st.markdown(f"""
+                    <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
+                                padding: 28px; margin-top: 24px; text-align: center;
+                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                        <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
+                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
+                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
+                            Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
+                        </p>
+                    </div>
+                    """, unsafe_allow_html=True)
 
                 # Generate Prediction CSV File for Download
                 download_df = input_df.copy()
@@ -929,147 +900,181 @@ with tab2:
     if uploaded_file is not None:
         try:
             uploaded_df = pd.read_csv(uploaded_file)
-            st.success(f"✅ Successfully loaded {len(uploaded_df)} records!")
             
-            # Show original preview
-            st.markdown("##### 🔍 Preview of Uploaded Data:")
-            st.dataframe(uploaded_df.head(5), use_container_width=True)
+            # Validate schema: must contain at least 3 of key driver fault columns
+            required_key_cols = [
+                "Collision Type", "Weather", "Surface Condition", "Light", 
+                "Traffic Control", "Driver Substance Abuse", "Injury Severity", 
+                "Vehicle Body Type", "Vehicle Movement", "Speed Limit", 
+                "Vehicle Year", "Vehicle Make", "Latitude", "Longitude",
+                "Crash Date/Time"
+            ]
+            matching_cols = [col for col in required_key_cols if col in uploaded_df.columns]
             
-            if st.button("🤖 Predict Batch Responsibility", type="primary", key="batch_predict_btn"):
-                with st.spinner("Analyzing batch records..."):
-                    # Process uploaded CSV
-                    processed_df = uploaded_df.copy()
-                    
-                    # Human-friendly mapping cleaner function
-                    mappings = {
-                        "Vehicle Body Type": MAP_BODY_TYPE,
-                        "Vehicle Make": MAP_MAKE,
-                        "Vehicle Movement": MAP_MOVEMENT,
-                        "Collision Type": MAP_COLLISION,
-                        "Weather": MAP_WEATHER,
-                        "Surface Condition": MAP_SURFACE,
-                        "Light": MAP_LIGHT,
-                        "Traffic Control": MAP_TRAFFIC_CONTROL,
-                        "Driver Substance Abuse": MAP_SUBSTANCE_ABUSE,
-                        "Injury Severity": MAP_INJURY_SEVERITY,
-                        "Vehicle First Impact Location": MAP_IMPACT_LOCATION,
-                        "Vehicle Second Impact Location": MAP_IMPACT_LOCATION,
-                        "Vehicle Going Dir": MAP_DIRECTION,
-                        "Vehicle Continuing Dir": MAP_DIRECTION,
-                        "Route Type": MAP_ROUTE_TYPE,
-                        "Agency Name": MAP_AGENCY
-                    }
-                    
-                    for col, mapping in mappings.items():
-                        if col in processed_df.columns:
-                            processed_df[col] = processed_df[col].apply(lambda x: mapping[x] if x in mapping else x)
+            if len(matching_cols) < 3:
+                st.error("❌ Invalid CSV Schema! The uploaded file does not match the driver fault classification dataset. Please download and use the provided sample template.")
+            else:
+                st.success(f"✅ Successfully loaded {len(uploaded_df)} records!")
+                
+                # Show original preview
+                st.markdown("##### 🔍 Preview of Uploaded Data:")
+                st.dataframe(uploaded_df.head(5), use_container_width=True)
+                
+                if st.button("🤖 Predict Batch Responsibility", type="primary", key="batch_predict_btn"):
+                    with st.spinner("Analyzing batch records..."):
+                        # Process uploaded CSV
+                        processed_df = uploaded_df.copy()
+                        
+                        # Human-friendly mapping cleaner function
+                        mappings = {
+                            "Vehicle Body Type": MAP_BODY_TYPE,
+                            "Vehicle Make": MAP_MAKE,
+                            "Vehicle Movement": MAP_MOVEMENT,
+                            "Collision Type": MAP_COLLISION,
+                            "Weather": MAP_WEATHER,
+                            "Surface Condition": MAP_SURFACE,
+                            "Light": MAP_LIGHT,
+                            "Traffic Control": MAP_TRAFFIC_CONTROL,
+                            "Driver Substance Abuse": MAP_SUBSTANCE_ABUSE,
+                            "Injury Severity": MAP_INJURY_SEVERITY,
+                            "Vehicle First Impact Location": MAP_IMPACT_LOCATION,
+                            "Vehicle Second Impact Location": MAP_IMPACT_LOCATION,
+                            "Vehicle Going Dir": MAP_DIRECTION,
+                            "Vehicle Continuing Dir": MAP_DIRECTION,
+                            "Route Type": MAP_ROUTE_TYPE,
+                            "Agency Name": MAP_AGENCY
+                        }
+                        
+                        for col, mapping in mappings.items():
+                            if col in processed_df.columns:
+                                processed_df[col] = processed_df[col].apply(lambda x: mapping[x] if x in mapping else x)
+                                
+                        # Run feature engineering
+                        processed_df = feature_engineering(processed_df)
+                        
+                        # Ensure all expected columns exist
+                        for col in expected_cols:
+                            if col not in processed_df.columns:
+                                processed_df[col] = np.nan
+                                
+                        # Force numeric types
+                        numeric_cols = [
+                            'Speed Limit', 'Vehicle Year', 'Latitude', 'Longitude', 
+                            'Is Weekend', 'Rush Hour', 'Night', 'Location_X', 'Location_Y', 
+                            'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
+                        ]
+                        for col in numeric_cols:
+                            processed_df[col] = pd.to_numeric(processed_df[col], errors='coerce')
                             
-                    # Run feature engineering
-                    processed_df = feature_engineering(processed_df)
-                    
-                    # Ensure all expected columns exist
-                    for col in expected_cols:
-                        if col not in processed_df.columns:
-                            processed_df[col] = np.nan
+                        # Reorder columns to match model expectations
+                        processed_df = processed_df[expected_cols]
+                        
+                        # Run prediction
+                        preds = model.predict(processed_df)
+                        
+                        # Handle confidence if possible
+                        confidences = []
+                        if hasattr(model, "predict_proba"):
+                            try:
+                                proba = model.predict_proba(processed_df)
+                                for i, pred in enumerate(preds):
+                                    confidences.append(f"{proba[i][int(pred)] * 100:.1f}%")
+                            except Exception:
+                                pass
+                        
+                        # Add results to output dataframe
+                        output_df = uploaded_df.copy()
+                        output_df["Predicted Fault"] = ["Driver At Fault" if int(p) == 1 else "Driver Not At Fault" for p in preds]
+                        if confidences:
+                            output_df["Confidence"] = confidences
                             
-                    # Force numeric types
-                    numeric_cols = [
-                        'Speed Limit', 'Vehicle Year', 'Latitude', 'Longitude', 
-                        'Is Weekend', 'Rush Hour', 'Night', 'Location_X', 'Location_Y', 
-                        'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
-                    ]
-                    for col in numeric_cols:
-                        processed_df[col] = pd.to_numeric(processed_df[col], errors='coerce')
+                        # Reorder columns to put results at the starting
+                        result_cols = ["Predicted Fault"]
+                        if confidences:
+                            result_cols.append("Confidence")
+                        other_cols = [c for c in output_df.columns if c not in result_cols]
+                        output_df = output_df[result_cols + other_cols]
                         
-                    # Reorder columns to match model expectations
-                    processed_df = processed_df[expected_cols]
-                    
-                    # Run prediction
-                    preds = model.predict(processed_df)
-                    
-                    # Handle confidence if possible
-                    confidences = []
-                    if hasattr(model, "predict_proba"):
-                        try:
-                            proba = model.predict_proba(processed_df)
-                            for i, pred in enumerate(preds):
-                                confidences.append(f"{proba[i][int(pred)] * 100:.1f}%")
-                        except Exception:
-                            pass
-                    
-                    # Add results to output dataframe
-                    output_df = uploaded_df.copy()
-                    output_df["Predicted Fault"] = ["Driver At Fault" if int(p) == 1 else "Driver Not At Fault" for p in preds]
-                    if confidences:
-                        output_df["Confidence"] = confidences
-                        
-                    # Reorder columns to put results at the starting
-                    result_cols = ["Predicted Fault"]
-                    if confidences:
-                        result_cols.append("Confidence")
-                    other_cols = [c for c in output_df.columns if c not in result_cols]
-                    output_df = output_df[result_cols + other_cols]
-                    
-                    # Create two columns for batch results layout
-                    batch_res_col1, batch_res_col2 = st.columns([3, 2])
-                    with batch_res_col1:
-                        st.markdown("##### 🎯 Prediction Results Preview:")
-                        
-                        # Apply pandas styling to color only the "Predicted Fault" column
-                        def color_fault_col(series):
-                            styles = []
-                            for val in series:
-                                if val == "Driver At Fault":
-                                    styles.append("background-color: #FEF2F2; color: #991B1B; font-weight: bold;")
-                                elif val == "Driver Not At Fault":
-                                    styles.append("background-color: #F0FDF4; color: #166534; font-weight: bold;")
-                                else:
-                                    styles.append("")
-                            return styles
-                        
-                        styled_preview = output_df.head(10).style.apply(color_fault_col, subset=["Predicted Fault"])
-                        st.dataframe(styled_preview, use_container_width=True)
-                        
-                        # Download Results Button
-                        results_csv = output_df.to_csv(index=False).encode('utf-8')
-                        st.download_button(
-                            label="📥 Download Predicted Results CSV",
-                            data=results_csv,
-                            file_name="batch_predictions_result.csv",
-                            mime="text/csv",
-                            key="batch_download_results_btn"
-                        )
-                        
-                    with batch_res_col2:
-                        try:
-                            # Count fault status
-                            fault_counts = output_df["Predicted Fault"].value_counts().reset_index()
-                            fault_counts.columns = ["Status", "Count"]
+                        # Create two columns for batch results layout
+                        batch_res_col1, batch_res_col2 = st.columns([3, 2])
+                        with batch_res_col1:
+                            st.markdown("##### 🎯 Prediction Results Preview:")
                             
-                            # Create pull values: pull "Driver At Fault" slice by 0.1 to highlight it initially
-                            pull_values = [0.1 if s == "Driver At Fault" else 0 for s in fault_counts["Status"]]
-                            colors = ["#EF4444" if s == "Driver At Fault" else "#10B981" for s in fault_counts["Status"]]
+                            # Apply pandas styling to color only the "Predicted Fault" column
+                            def color_fault_col(series):
+                                styles = []
+                                for val in series:
+                                    if val == "Driver At Fault":
+                                        styles.append("background-color: #FEF2F2; color: #991B1B; font-weight: bold;")
+                                    elif val == "Driver Not At Fault":
+                                        styles.append("background-color: #F0FDF4; color: #166534; font-weight: bold;")
+                                    else:
+                                        styles.append("")
+                                return styles
                             
-                            fig = go.Figure(data=[go.Pie(
-                                labels=fault_counts["Status"],
-                                values=fault_counts["Count"],
-                                pull=pull_values,
-                                hole=0.4,
-                                textinfo='percent+label',
-                                marker=dict(colors=colors, line=dict(color='#FFFFFF', width=2))
-                            )])
-                            fig.update_layout(
-                                title_text="📊 Batch Fault Distribution",
-                                title_font=dict(size=16, family="Inter", color="#1E3A8A"),
-                                paper_bgcolor='rgba(0,0,0,0)',
-                                plot_bgcolor='rgba(0,0,0,0)',
-                                showlegend=True,
-                                legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
-                                margin=dict(t=40, b=40, l=0, r=0),
-                                height=280
+                            styled_preview = output_df.head(10).style.apply(color_fault_col, subset=["Predicted Fault"])
+                            st.dataframe(styled_preview, use_container_width=True)
+                            
+                            # Download Results Button
+                            results_csv = output_df.to_csv(index=False).encode('utf-8')
+                            st.download_button(
+                                label="📥 Download Predicted Results CSV",
+                                data=results_csv,
+                                file_name="batch_predictions_result.csv",
+                                mime="text/csv",
+                                key="batch_download_results_btn"
                             )
-                            st.plotly_chart(fig, use_container_width=True)
-                        except Exception as ex:
-                            st.warning(f"Could not render distribution chart: {ex}")
+                            
+                        with batch_res_col2:
+                            try:
+                                # Count fault status
+                                fault_counts = output_df["Predicted Fault"].value_counts().reset_index()
+                                fault_counts.columns = ["Status", "Count"]
+                                
+                                # Create pull values: pull "Driver At Fault" slice by 0.1 to highlight it initially
+                                pull_values = [0.1 if s == "Driver At Fault" else 0 for s in fault_counts["Status"]]
+                                colors = ["#EF4444" if s == "Driver At Fault" else "#10B981" for s in fault_counts["Status"]]
+                                
+                                fig = go.Figure(data=[go.Pie(
+                                    labels=fault_counts["Status"],
+                                    values=fault_counts["Count"],
+                                    pull=pull_values,
+                                    hole=0.4,
+                                    textinfo='percent+label',
+                                    marker=dict(colors=colors, line=dict(color='#FFFFFF', width=2))
+                                )])
+                                fig.update_layout(
+                                    title_text="📊 Batch Fault Distribution",
+                                    title_font=dict(size=16, family="Inter", color="#1E3A8A"),
+                                    paper_bgcolor='rgba(0,0,0,0)',
+                                    plot_bgcolor='rgba(0,0,0,0)',
+                                    showlegend=True,
+                                    legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
+                                    margin=dict(t=40, b=40, l=0, r=0),
+                                    height=280
+                                )
+                                st.plotly_chart(fig, use_container_width=True)
+                            except Exception as ex:
+                                st.warning(f"Could not render distribution chart: {ex}")
         except Exception as e:
             st.error(f"❌ Error processing CSV file: {e}")
+
+# ==========================================
+# FOOTER
+# ==========================================
+st.markdown("""
+<div style="margin-top: 80px; padding-top: 24px; border-top: 1px solid #E2E8F0; text-align: center; font-family: 'Inter', sans-serif;">
+    <div style="display: flex; justify-content: center; align-items: center; gap: 20px; margin-bottom: 12px;">
+        <span style="font-size: 14px; color: #64748B; font-weight: 600;">🚗 Accident Analytics</span>
+        <span style="color: #CBD5E1;">|</span>
+        <span style="font-size: 14px; color: #64748B; font-weight: 600;">🤖 XGBoost Classifier</span>
+    </div>
+    <p style="margin: 0; font-size: 12px; color: #94A3B8; font-weight: 400; line-height: 1.6;">
+        This classification tool is an assistive pipeline designed to analyze crash descriptors. 
+        Please cross-reference results with formal investigation reports.
+    </p>
+    <p style="margin: 6px 0 0 0; font-size: 11px; color: #CBD5E1; font-weight: 400;">
+        © 2026 Accident Analytics System. All rights reserved.
+    </p>
+</div>
+""", unsafe_allow_html=True)
