@@ -4,6 +4,7 @@ import numpy as np
 import joblib
 import os
 import datetime
+import plotly.graph_objects as go
 
 # ==========================================
 # PAGE CONFIG
@@ -767,32 +768,63 @@ def run_single_prediction():
                     except Exception:
                         pass
 
-                if prediction == 1:
-                    st.markdown(f"""
-                    <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
-                                padding: 28px; margin-top: 24px; text-align: center;
-                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                        <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
-                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
-                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
-                            Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
-                else:
-                    st.markdown(f"""
-                    <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
-                                padding: 28px; margin-top: 24px; text-align: center;
-                                box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
-                        <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
-                        <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
-                        {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
-                        <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
-                            Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
-                        </p>
-                    </div>
-                    """, unsafe_allow_html=True)
+                # Create columns for results layout
+                res_col1, res_col2 = st.columns([1, 1])
+                with res_col1:
+                    if prediction == 1:
+                        st.markdown(f"""
+                        <div style="background-color: #FEF2F2; border: 1px solid #FECACA; border-radius: 12px;
+                                    padding: 28px; text-align: center;
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                            <div style="font-size: 40px; margin-bottom: 8px;">🚨</div>
+                            <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #991B1B;">Driver At Fault</h3>
+                            {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #B91C1C;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                            <p style="margin: 12px 0 0 0; font-size: 14px; color: #7F1D1D; line-height: 1.5; font-weight: 500;">
+                                Recommendation: Review driver substance abuse status, weather condition overlays, and speed logs for insurance claim processing.
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""
+                        <div style="background-color: #F0FDF4; border: 1px solid #BBF7D0; border-radius: 12px;
+                                    padding: 28px; text-align: center;
+                                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.025);">
+                            <div style="font-size: 40px; margin-bottom: 8px;">✅</div>
+                            <h3 style="margin: 0; font-size: 20px; font-weight: 700; color: #166534;">Driver Not At Fault</h3>
+                            {"<div style='margin-top: 4px; font-size: 14px; font-weight: 600; color: #15803D;'>Confidence: " + f"{confidence:.1f}%" + "</div>" if confidence else ""}
+                            <p style="margin: 12px 0 0 0; font-size: 14px; color: #065F46; line-height: 1.5; font-weight: 500;">
+                                Recommendation: Proceed with standard insurance processing. Cross-reference vehicle collision type against third-party impact coordinates.
+                            </p>
+                        </div>
+                        """, unsafe_allow_html=True)
+
+                with res_col2:
+                    if hasattr(model, "predict_proba"):
+                        try:
+                            proba = model.predict_proba(input_df)[0]
+                            pull_values = [0, 0.1]  # Highlight / Explode "Driver At Fault" slice initially
+                            
+                            fig = go.Figure(data=[go.Pie(
+                                labels=["Driver Not At Fault", "Driver At Fault"],
+                                values=[float(proba[0]) * 100, float(proba[1]) * 100],
+                                pull=pull_values,
+                                hole=0.4,
+                                textinfo='percent',
+                                marker=dict(colors=["#10B981", "#EF4444"], line=dict(color='#FFFFFF', width=2))
+                            )])
+                            fig.update_layout(
+                                title_text="🎯 Prediction Probability Split",
+                                title_font=dict(size=16, family="Inter", color="#1E3A8A"),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                showlegend=True,
+                                legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
+                                margin=dict(t=40, b=40, l=0, r=0),
+                                height=280
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as ex:
+                            st.warning(f"Could not render probability chart: {ex}")
 
                 # Generate Prediction CSV File for Download
                 download_df = input_df.copy()
@@ -971,17 +1003,52 @@ with tab2:
                     if confidences:
                         output_df["Confidence"] = confidences
                         
-                    st.markdown("##### 🎯 Prediction Results Preview:")
-                    st.dataframe(output_df.head(10), use_container_width=True)
-                    
-                    # Download Results Button
-                    results_csv = output_df.to_csv(index=False).encode('utf-8')
-                    st.download_button(
-                        label="📥 Download Predicted Results CSV",
-                        data=results_csv,
-                        file_name="batch_predictions_result.csv",
-                        mime="text/csv",
-                        key="batch_download_results_btn"
-                    )
+                    # Create two columns for batch results layout
+                    batch_res_col1, batch_res_col2 = st.columns([3, 2])
+                    with batch_res_col1:
+                        st.markdown("##### 🎯 Prediction Results Preview:")
+                        st.dataframe(output_df.head(10), use_container_width=True)
+                        
+                        # Download Results Button
+                        results_csv = output_df.to_csv(index=False).encode('utf-8')
+                        st.download_button(
+                            label="📥 Download Predicted Results CSV",
+                            data=results_csv,
+                            file_name="batch_predictions_result.csv",
+                            mime="text/csv",
+                            key="batch_download_results_btn"
+                        )
+                        
+                    with batch_res_col2:
+                        try:
+                            # Count fault status
+                            fault_counts = output_df["Predicted Fault"].value_counts().reset_index()
+                            fault_counts.columns = ["Status", "Count"]
+                            
+                            # Create pull values: pull "Driver At Fault" slice by 0.1 to highlight it initially
+                            pull_values = [0.1 if s == "Driver At Fault" else 0 for s in fault_counts["Status"]]
+                            colors = ["#EF4444" if s == "Driver At Fault" else "#10B981" for s in fault_counts["Status"]]
+                            
+                            fig = go.Figure(data=[go.Pie(
+                                labels=fault_counts["Status"],
+                                values=fault_counts["Count"],
+                                pull=pull_values,
+                                hole=0.4,
+                                textinfo='percent+label',
+                                marker=dict(colors=colors, line=dict(color='#FFFFFF', width=2))
+                            )])
+                            fig.update_layout(
+                                title_text="📊 Batch Fault Distribution",
+                                title_font=dict(size=16, family="Inter", color="#1E3A8A"),
+                                paper_bgcolor='rgba(0,0,0,0)',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                showlegend=True,
+                                legend=dict(orientation="h", yanchor="bottom", y=-0.1, xanchor="center", x=0.5),
+                                margin=dict(t=40, b=40, l=0, r=0),
+                                height=280
+                            )
+                            st.plotly_chart(fig, use_container_width=True)
+                        except Exception as ex:
+                            st.warning(f"Could not render distribution chart: {ex}")
         except Exception as e:
             st.error(f"❌ Error processing CSV file: {e}")

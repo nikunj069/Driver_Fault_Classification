@@ -31,44 +31,6 @@ An optimized, premium Machine Learning web application designed to instantly cla
 
 ---
 
-## 🚀 Installation & Quick Start
-
-### 1. Prerequisites
-Make sure you have **Python 3.8+** installed on your system.
-
-### 2. Clone the Repository
-```bash
-git clone https://github.com/nikunj069/Driver_Fault_Classification.git
-cd Driver_Fault_Classification
-```
-
-### 3. Create a Virtual Environment
-It is highly recommended to use a virtual environment:
-```bash
-# Windows
-python -m venv .venv
-.venv\Scripts\activate
-
-# macOS / Linux
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-### 4. Install Dependencies
-Install the required packages using the project `requirements.txt`:
-```bash
-pip install -r requirements.txt
-```
-
-### 5. Launch the Streamlit App
-Start the local server:
-```bash
-python -m streamlit run app.py
-```
-After launching, navigate to `http://localhost:8501` in your web browser.
-
----
-
 ## 📁 Directory Structure
 
 ```
