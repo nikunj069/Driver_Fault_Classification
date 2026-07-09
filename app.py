@@ -208,6 +208,33 @@ hr { border-color: #E2E8F0 !important; }
 ::-webkit-scrollbar-track { background: #F1F5F9; }
 ::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+
+/* File Uploader Light Theme overrides */
+[data-testid="stFileUploader"] {
+    background-color: #F8FAFC !important;
+    border: 1px dashed #CBD5E1 !important;
+    border-radius: 12px !important;
+    padding: 16px !important;
+}
+[data-testid="stFileUploader"] section {
+    background-color: transparent !important;
+    border: none !important;
+}
+[data-testid="stFileUploader"] div,
+[data-testid="stFileUploader"] span,
+[data-testid="stFileUploader"] p,
+[data-testid="stFileUploader"] label {
+    color: #475569 !important;
+}
+[data-testid="stFileUploader"] button {
+    background-color: #FFFFFF !important;
+    color: #1E293B !important;
+    border: 1px solid #CBD5E1 !important;
+}
+[data-testid="stFileUploader"] button:hover {
+    background-color: #F1F5F9 !important;
+    border-color: #94A3B8 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -597,6 +624,73 @@ expected_cols = [
     'Crash Year', 'Crash Month', 'Crash Day', 'Crash Hour', 'Crash DayOfWeek'
 ]
 
+def generate_sample_csv():
+    # Engineered columns to exclude from raw template
+    engineered_cols = {
+        "Crash Year", "Crash Month", "Crash Day", "Crash Hour", "Crash DayOfWeek",
+        "Is Weekend", "Rush Hour", "Night", "Location_X", "Location_Y"
+    }
+    
+    # Base raw columns list derived from expected_cols
+    raw_cols = [col for col in expected_cols if col not in engineered_cols]
+    
+    # Add raw inputs that are needed for feature engineering
+    if "Crash Date/Time" not in raw_cols:
+        raw_cols.append("Crash Date/Time")
+    if "Location" not in raw_cols:
+        raw_cols.append("Location")
+        
+    # Example values for guidance
+    example_values = {
+        "Local Case Number": "MP2001",
+        "Agency Name": "Montgomery County Police",
+        "ACRS Report Type": "Property Damage Crash",
+        "Route Type": "County",
+        "Road Name": "RAILROAD ST",
+        "Cross-Street Type": "Municipality",
+        "Cross-Street Name": "E DIAMOND AVE",
+        "Collision Type": "SAME DIR REAR END",
+        "Weather": "RAINING",
+        "Surface Condition": "WET",
+        "Light": "DAYLIGHT",
+        "Traffic Control": "TRAFFIC SIGNAL",
+        "Driver Substance Abuse": "NONE DETECTED",
+        "Injury Severity": "NO APPARENT INJURY",
+        "Drivers License State": "MD",
+        "Vehicle Damage Extent": "SUPERFICIAL",
+        "Vehicle First Impact Location": "SIX OCLOCK",
+        "Vehicle Second Impact Location": "SIX OCLOCK",
+        "Vehicle Body Type": "PASSENGER CAR",
+        "Vehicle Movement": "STOPPED IN TRAFFIC LANE",
+        "Vehicle Continuing Dir": "South",
+        "Vehicle Going Dir": "West",
+        "Driverless Vehicle": "No",
+        "Parked Vehicle": "No",
+        "Vehicle Make": "MITSUBISHI",
+        "Vehicle Model": "MIRAGE",
+        "Equipment Problems": "NO MISUSE",
+        "Speed Limit": 25,
+        "Vehicle Year": 2001,
+        "Latitude": 39.094075,
+        "Longitude": -77.20578333,
+        "Location": "39.094075 -77.20578333",
+        "Crash Date/Time": "05/01/2016 07:25:00 PM"
+    }
+    
+    # Build single-row DataFrame using columns in raw_cols
+    row_data = {col: [example_values.get(col, "")] for col in raw_cols}
+    df_sample = pd.DataFrame(row_data)
+    return df_sample.to_csv(index=False).encode('utf-8')
+
+def filter_guidance_row(df):
+    if "Local Case Number" in df.columns and "Vehicle Make" in df.columns:
+        is_example = (
+            (df["Local Case Number"].astype(str) == "MP2001") &
+            (df["Vehicle Make"].astype(str).str.upper() == "MITSUBISHI")
+        )
+        return df[~is_example].reset_index(drop=True)
+    return df
+
 def mapped_selectbox(label, mapping, default_key):
     options = sorted(list(mapping.keys()))
     idx = options.index(default_key) if default_key in options else 0
@@ -871,31 +965,12 @@ with tab2:
     <div style="margin: 20px 0;">
         <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 700; color: #1E3A8A;">📁 Batch Prediction from CSV</h3>
         <p style="margin: 0; font-size: 14px; color: #64748B; line-height: 1.5;">
-            Upload a CSV file containing multiple accident records to run predictions in bulk. 
-            Download the sample template below, fill in the details according to the labelled columns, and upload it here.
+            Upload your filled CSV file below to run predictions in bulk. If you need a template, download the sample CSV template and follow the instructions below.
         </p>
     </div>
     """, unsafe_allow_html=True)
     
-    # 1. Download Sample CSV Button
-    sample_csv_path = "sample_mixed.csv"
-    if os.path.exists(sample_csv_path):
-        with open(sample_csv_path, "r", encoding="utf-8") as f:
-            sample_csv_data = f.read()
-    else:
-        sample_csv_data = ""
-        
-    st.download_button(
-        label="📥 Download Sample CSV Template",
-        data=sample_csv_data,
-        file_name="sample_accident_template.csv",
-        mime="text/csv",
-        key="download_sample_template_btn"
-    )
-    
-    st.markdown("<hr style='margin: 24px 0;'/>", unsafe_allow_html=True)
-    
-    # 2. File Uploader
+    # 1. File Uploader (Placed at the TOP!)
     uploaded_file = st.file_uploader("Upload your filled CSV file", type=["csv"], key="batch_uploader")
     if uploaded_file is not None:
         try:
@@ -914,16 +989,22 @@ with tab2:
             if len(matching_cols) < 3:
                 st.error("❌ Invalid CSV Schema! The uploaded file does not match the driver fault classification dataset. Please download and use the provided sample template.")
             else:
-                st.success(f"✅ Successfully loaded {len(uploaded_df)} records!")
+                # Filter out the example row for prediction
+                filtered_df = filter_guidance_row(uploaded_df)
                 
-                # Show original preview
-                st.markdown("##### 🔍 Preview of Uploaded Data:")
-                st.dataframe(uploaded_df.head(5), use_container_width=True)
-                
-                if st.button("🤖 Predict Batch Responsibility", type="primary", key="batch_predict_btn"):
-                    with st.spinner("Analyzing batch records..."):
-                        # Process uploaded CSV
-                        processed_df = uploaded_df.copy()
+                if len(filtered_df) == 0:
+                    st.warning("⚠️ The uploaded file contains only the example guidance row. Please replace it with your own vehicle data before uploading.")
+                else:
+                    st.success(f"✅ Successfully loaded {len(filtered_df)} records!")
+                    
+                    # Show original preview
+                    st.markdown("##### 🔍 Preview of Uploaded Data:")
+                    st.dataframe(filtered_df.head(5), use_container_width=True)
+                    
+                    if st.button("🤖 Predict Batch Responsibility", type="primary", key="batch_predict_btn"):
+                        with st.spinner("Analyzing batch records..."):
+                            # Process uploaded CSV
+                            processed_df = filtered_df.copy()
                         
                         # Human-friendly mapping cleaner function
                         mappings = {
@@ -983,7 +1064,7 @@ with tab2:
                                 pass
                         
                         # Add results to output dataframe
-                        output_df = uploaded_df.copy()
+                        output_df = filtered_df.copy()
                         output_df["Predicted Fault"] = ["Driver At Fault" if int(p) == 1 else "Driver Not At Fault" for p in preds]
                         if confidences:
                             output_df["Confidence"] = confidences
@@ -1058,6 +1139,57 @@ with tab2:
                                 st.warning(f"Could not render distribution chart: {ex}")
         except Exception as e:
             st.error(f"❌ Error processing CSV file: {e}")
+
+    st.markdown("<hr style='margin: 36px 0;'/>", unsafe_allow_html=True)
+    
+    # 2. Reference Template Section (placed below uploader)
+    st.markdown("""
+    <div style="margin: 20px 0 10px 0;">
+        <h4 style="margin: 0; font-size: 18px; font-weight: 700; color: #1E3A8A;">📥 Reference CSV Template & Instructions</h4>
+        <p style="margin: 4px 0 0 0; font-size: 14px; color: #64748B; line-height: 1.5;">
+            Use the tools below to download a reference CSV template and view formatting guidelines.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # 1. Download Sample CSV Button (generated dynamically from the expected feature list)
+    sample_csv_data = generate_sample_csv()
+        
+    st.download_button(
+        label="📥 Download Sample CSV Template",
+        data=sample_csv_data,
+        file_name="sample_accident_template.csv",
+        mime="text/csv",
+        key="download_sample_template_btn"
+    )
+    
+    # Professional How-to-Use Info Card
+    st.markdown("""
+    <div style="background-color: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 12px; padding: 24px; margin-top: 16px; margin-bottom: 16px;">
+        <h4 style="margin: 0 0 12px 0; color: #1E3A8A; font-size: 16px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
+            📄 How to Use the Sample CSV
+        </h4>
+        <ul style="margin: 0; padding-left: 20px; color: #475569; font-size: 14px; line-height: 1.6; font-weight: 500;">
+            <li>Download the sample CSV.</li>
+            <li>Keep all column names unchanged.</li>
+            <li>Replace the example values with your own vehicle data.</li>
+            <li>Add multiple rows if predicting multiple vehicles.</li>
+            <li>Save the file as CSV before uploading.</li>
+            <li>Do not leave mandatory fields empty.</li>
+            <li>Use the same data format as shown in the example.</li>
+        </ul>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Styled Warning Box
+    st.markdown("""
+    <div style="background-color: #FFFBEB; border: 1px solid #FDE68A; border-radius: 10px; padding: 16px 20px; margin-bottom: 24px;">
+        <h5 style="margin: 0 0 4px 0; color: #B45309; font-size: 14px; font-weight: 700;">⚠️ Important</h5>
+        <p style="margin: 0; color: #D97706; font-size: 13px; font-weight: 500; line-height: 1.5;">
+            The example row is provided only to demonstrate the correct input format. Please replace it with your own vehicle data before uploading.
+        </p>
+    </div>
+    """, unsafe_allow_html=True)
 
 # ==========================================
 # FOOTER
