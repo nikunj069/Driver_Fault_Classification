@@ -1003,11 +1003,32 @@ with tab2:
                     if confidences:
                         output_df["Confidence"] = confidences
                         
+                    # Reorder columns to put results at the starting
+                    result_cols = ["Predicted Fault"]
+                    if confidences:
+                        result_cols.append("Confidence")
+                    other_cols = [c for c in output_df.columns if c not in result_cols]
+                    output_df = output_df[result_cols + other_cols]
+                    
                     # Create two columns for batch results layout
                     batch_res_col1, batch_res_col2 = st.columns([3, 2])
                     with batch_res_col1:
                         st.markdown("##### 🎯 Prediction Results Preview:")
-                        st.dataframe(output_df.head(10), use_container_width=True)
+                        
+                        # Apply pandas styling to color only the "Predicted Fault" column
+                        def color_fault_col(series):
+                            styles = []
+                            for val in series:
+                                if val == "Driver At Fault":
+                                    styles.append("background-color: #FEF2F2; color: #991B1B; font-weight: bold;")
+                                elif val == "Driver Not At Fault":
+                                    styles.append("background-color: #F0FDF4; color: #166534; font-weight: bold;")
+                                else:
+                                    styles.append("")
+                            return styles
+                        
+                        styled_preview = output_df.head(10).style.apply(color_fault_col, subset=["Predicted Fault"])
+                        st.dataframe(styled_preview, use_container_width=True)
                         
                         # Download Results Button
                         results_csv = output_df.to_csv(index=False).encode('utf-8')
