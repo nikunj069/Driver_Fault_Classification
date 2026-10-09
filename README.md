@@ -22,6 +22,61 @@ An optimized, premium Machine Learning web application designed to instantly cla
 
 ---
 
+## 📊 Exploratory Data Analysis (EDA)
+
+Our EDA process involved a comprehensive analysis of the historical crash dataset to ensure high data quality and identify key patterns:
+* **Missing Value Analysis**: Identified and handled columns with >40% missing values.
+* **Cardinality & Uniqueness**: Evaluated categorical columns for cardinality and removed high-cardinality ID columns that do not contribute to predictive power.
+* **Data Cleaning**: Detected and removed duplicate records and dropped irrelevant features to streamline the dataset.
+* **Distribution Checks**: Summarized column statistics to understand the spread and variations in numerical and categorical features.
+
+---
+
+## ⚙️ Data Engineering & Feature Extraction (DA)
+
+To maximize the model's predictive capability, we engineered several new features from the raw data:
+* **Temporal Features**: Deconstructed `Crash Date/Time` into `Crash Year`, `Month`, `Day`, `Hour`, and `DayOfWeek`.
+* **Behavioral/Contextual Indicators**: 
+  * `Is Weekend`: Flags accidents occurring on weekends.
+  * `Night Driving`: Identifies crashes happening during night hours (before 6 AM or after 6 PM).
+  * `Rush Hour`: Flags incidents during peak traffic windows (6-9 AM and 3-6 PM).
+* **Spatial Features**: Parsed raw `Location` strings into distinct `Location_X` and `Location_Y` coordinate points for spatial modeling.
+
+---
+
+## 🧠 Model & Pipeline Architecture
+
+The system uses a robust, automated Scikit-Learn `Pipeline` combined with a `ColumnTransformer` to handle preprocessing and predictions seamlessly. 
+
+```mermaid
+graph TD
+    A[Raw Input Data] --> B[Feature Engineering]
+    B --> C{ColumnTransformer}
+    
+    C -->|Numerical Features| D[Numerical Pipeline]
+    D --> D1[SimpleImputer]
+    
+    C -->|Categorical Features| E[Categorical Pipeline]
+    E --> E1[SimpleImputer]
+    E1 --> E2[Categorical Encoder]
+    
+    D1 --> F[Combined Features]
+    E2 --> F
+    
+    F --> G[XGBoost Classifier]
+    G --> H[Prediction: Fault / Not at Fault]
+```
+
+* **Preprocessing Pipeline**: 
+  * **Numerical Pipeline**: Applies `SimpleImputer` to handle missing numeric values.
+  * **Categorical Pipeline**: Imputes missing categorical values and encodes them for the model.
+* **Model Selection & Tuning**: 
+  * Evaluated multiple algorithms including *Logistic Regression, Random Forest, Extra Trees, CatBoost, and XGBoost*.
+  * **Final Selection**: **XGBoost Classifier** was chosen for the final model due to its optimal balance of high accuracy and faster hyperparameter optimization (tuned using randomized search over `randint` and `uniform` distributions).
+* **Deployment**: The entire pipeline (preprocessor + XGBoost model) is serialized via `joblib` into a single `best_model.pkl` artifact, ensuring that production data goes through the exact same transformations as the training data.
+
+---
+
 ## 🛠️ Tech Stack
 
 * **Frontend Framework**: Streamlit (Python-based interactive application framework)
